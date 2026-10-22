@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14213D">
+<title>Reality</title>
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#14213D;color:#fff;font-family:"Segoe UI",system-ui,sans-serif;text-align:center}
+h1{margin:0 0 8px;font-size:32px}
+p{margin:0;opacity:.8}
+button{margin-top:18px;padding:12px 22px;border:0;border-radius:10px;font:inherit;background:#6FB1D8;color:#14213D;cursor:pointer}
+.hide{display:none}
+</style>
+</head>
+<body>
+<main>
+  <h1>Reality</h1>
+  <p id="msg">جاري فتح الداش بورد...</p>
+  <button id="retry" class="hide">حاول تاني</button>
+</main>
+<script>
+// بيعرف اسم المستخدم والريبو من عنوان الصفحة نفسه: user.github.io/repo/
+const user = location.hostname.split('.')[0];
+const repo = location.pathname.split('/')[1];
+
+async function getLink() {
+  const t = Date.now();
+  const tries = [
+    () => fetch(`https://api.github.com/repos/${user}/${repo}/contents/link.json?t=${t}`,
+          { headers: { Accept: 'application/vnd.github.raw+json' }, cache: 'no-store' }),
+    () => fetch(`https://raw.githubusercontent.com/${user}/${repo}/main/link.json?t=${t}`, { cache: 'no-store' }),
+  ];
+  for (const f of tries) {
+    try {
+      const r = await f();
+      if (!r.ok) continue;
+      const j = await r.json();
+      if (j.url && /^https:\/\/[a-z0-9-]+\.trycloudflare\.com\/?$/.test(j.url)) return j.url;
+    } catch {}
+  }
+  return null;
+}
+
+async function go() {
+  document.getElementById('retry').classList.add('hide');
+  document.getElementById('msg').textContent = 'جاري فتح الداش بورد...';
+  const url = await getLink();
+  if (url) return location.replace(url);
+  document.getElementById('msg').textContent = 'مش قادر أوصل للسيرفر دلوقتي. تأكد إن التابلت شغال وجرّب تاني.';
+  document.getElementById('retry').classList.remove('hide');
+}
+document.getElementById('retry').onclick = go;
+go();
+</script>
+</body>
+</html>
